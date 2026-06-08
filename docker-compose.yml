@@ -1,0 +1,74 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tech4um_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tech4um}
+      POSTGRES_USER: ${POSTGRES_USER:-tech4um_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tech4um_pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tech4um_user} -d ${POSTGRES_DB:-tech4um}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - tech4um_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tech4um_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3001
+      # Individual DB params for pg_isready in entrypoint
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-tech4um}
+      DB_USER: ${POSTGRES_USER:-tech4um_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-tech4um_pass}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tech4um_user}:${POSTGRES_PASSWORD:-tech4um_pass}@postgres:5432/${POSTGRES_DB:-tech4um}
+      JWT_SECRET: ${JWT_SECRET:-supersecret_tech4um_jwt_key_change_in_production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      BCRYPT_SALT_ROUNDS: ${BCRYPT_SALT_ROUNDS:-10}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+    ports:
+      - "3001:3001"
+    networks:
+      - tech4um_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001/api}
+        VITE_SOCKET_URL: ${VITE_SOCKET_URL:-http://localhost:3001}
+    container_name: tech4um_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - tech4um_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  tech4um_network:
+    driver: bridge
