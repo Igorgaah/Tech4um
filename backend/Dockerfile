@@ -1,10 +1,11 @@
 FROM node:20-alpine AS base
 WORKDIR /app
+# pg_isready for healthcheck script, dumb-init for signal forwarding
 RUN apk add --no-cache dumb-init postgresql-client
 
 # Dependencies stage
 FROM base AS deps
-COPY package*.json ./
+COPY package.json ./
 RUN npm install --omit=dev --no-audit --no-fund
 
 # Final stage
