@@ -1,0 +1,44 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
+      "src": "backend/src/app.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "backend/database/migrations/**",
+          "backend/src/**"
+        ]
+      }
+    }
+  ],
+  "routes": [
+    { "src": "/health",          "dest": "backend/src/app.js" },
+    { "src": "/api-docs\\.json", "dest": "backend/src/app.js" },
+    { "src": "/api-docs(.*)",    "dest": "backend/src/app.js" },
+    { "src": "/api/(.*)",        "dest": "backend/src/app.js" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)",            "dest": "frontend/dist/index.html" }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "DATABASE_URL": "@database_url",
+    "JWT_SECRET": "@jwt_secret",
+    "JWT_EXPIRES_IN": "7d",
+    "BCRYPT_SALT_ROUNDS": "10",
+    "CORS_ORIGIN": "@cors_origin"
+  },
+  "build": {
+    "env": {
+      "VITE_API_URL": "@vite_api_url",
+      "VITE_SOCKET_URL": "@vite_socket_url"
+    }
+  }
+}

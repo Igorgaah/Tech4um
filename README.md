@@ -235,6 +235,40 @@ Tech4um/
     └── package.json
 ```
 
+## Deploy no Vercel
+
+O projeto inclui `vercel.json` na raiz para deploy do monorepo (frontend + API REST) em um único projeto Vercel.
+
+> **Importante:** O servidor Socket.IO requer conexões persistentes (WebSocket), que não são suportadas pelo modelo serverless da Vercel. Para funcionalidade completa em produção, faça o deploy do backend em **Railway**, **Render** ou **Fly.io** e aponte `VITE_SOCKET_URL` para esse serviço.
+
+### 1. Configure os secrets no Vercel CLI
+
+```bash
+vercel secrets add database_url      "postgresql://user:pass@host:5432/tech4um"
+vercel secrets add jwt_secret        "sua_chave_jwt_segura_min32_chars"
+vercel secrets add cors_origin       "https://seu-projeto.vercel.app"
+vercel secrets add vite_api_url      "https://seu-projeto.vercel.app/api"
+vercel secrets add vite_socket_url   "https://seu-backend-websocket.railway.app"
+```
+
+### 2. Deploy
+
+```bash
+vercel --prod
+```
+
+### Variáveis de Ambiente (Vercel Dashboard)
+
+| Secret | Exemplo |
+|--------|---------|
+| `DATABASE_URL` | `postgresql://...` |
+| `JWT_SECRET` | 32+ caracteres aleatórios |
+| `CORS_ORIGIN` | `https://seu-projeto.vercel.app` |
+| `VITE_API_URL` | `https://seu-projeto.vercel.app/api` |
+| `VITE_SOCKET_URL` | URL do servidor Socket.IO separado |
+
+---
+
 ## Execução com Docker
 
 ### Pré-requisitos
