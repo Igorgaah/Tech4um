@@ -262,8 +262,10 @@ docker compose up --build
 | Frontend | http://localhost |
 | API | http://localhost:3001/api |
 | Health | http://localhost:3001/health |
+| Swagger UI | http://localhost:3001/api-docs |
+| OpenAPI JSON | http://localhost:3001/api-docs.json |
 
-> O banco de dados é inicializado automaticamente com schema e dados de demonstração via docker-entrypoint-initdb.d.
+> O banco de dados é inicializado automaticamente com schema e dados de demonstração. O `docker-entrypoint.sh` aguarda o PostgreSQL ficar saudável e então executa as migrations e o seed automaticamente antes de subir o servidor Node.js.
 
 ### Parar e limpar
 
@@ -353,6 +355,8 @@ Acesse: http://localhost:5173
 ---
 
 ## API Reference
+
+A documentação interativa completa está disponível em **[http://localhost:3001/api-docs](http://localhost:3001/api-docs)** (Swagger UI). Use o botão **Authorize** para inserir o JWT e testar os endpoints diretamente.
 
 Todos os endpoints protegidos requerem: `Authorization: Bearer <token>`
 

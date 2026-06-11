@@ -36,9 +36,13 @@ function removeUserFromRoom(forumId, socketId) {
 }
 
 function initializeSocket(server) {
+  const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim());
+
   const io = new Server(server, {
     cors: {
-      origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+      origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -139,20 +143,26 @@ function initializeSocket(server) {
         const roomKey = getRoomKey(forumId);
 
         if (isPrivate && recipientId) {
-          // Emit only to sender and recipient
+          // Emit new-message to sender
           socket.emit('new-message', message);
 
-          // Find recipient socket(s) in this room
-          const roomSockets = await io.in(roomKey).fetchSockets();
-          const recipientSockets = roomSockets.filter((s) => s.user?.id === recipientId);
+          // Find ALL recipient sockets globally (not just those in this room)
+          const allSockets = await io.fetchSockets();
+          const recipientSockets = allSockets.filter((s) => s.user?.id === recipientId);
+
+          const notification = {
+            from: { id: socket.user.id, username: socket.user.username },
+            forumId,
+            content: content.substring(0, 50),
+          };
 
           recipientSockets.forEach((rs) => {
-            rs.emit('new-message', message);
-            rs.emit('private-notification', {
-              from: { id: socket.user.id, username: socket.user.username },
-              forumId,
-              content: content.substring(0, 50),
-            });
+            // Show the message in chat only if recipient is already in this room
+            if (rs.rooms.has(roomKey)) {
+              rs.emit('new-message', message);
+            }
+            // Always deliver the private notification regardless of current room
+            rs.emit('private-notification', notification);
           });
         } else {
           // Broadcast to entire room
